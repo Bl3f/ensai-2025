@@ -30,8 +30,20 @@ jobs:
       - name: Authenticate to GCP registry
         run: gcloud auth configure-docker europe-docker.pkg.dev
 
-      - name: Create the repo
-        run: gcloud artifacts repositories create test-christophe --repository-format docker --location europe
+      - name: Check if the repository exists
+        run: |
+          gcloud artifacts repositories describe test-christophe --location=europe || echo "Repo does not exist"
+
+      - name: Create the repo if it doesn't exist
+        run: |
+          if ! gcloud artifacts repositories describe test-christophe --location=europe >/dev/null 2>&1; then
+            gcloud artifacts repositories create test-christophe \
+              --repository-format=docker \
+              --location=europe
+          else
+            echo "Repository already exists. Skipping creation."
+          fi
+      
 
       - name: Push to GCP registry
         run: docker push europe-docker.pkg.dev/ensai-2025/test-christophe/gender-api
