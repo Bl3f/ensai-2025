@@ -63,8 +63,9 @@ jobs:
         with:
           service: 'christophe-gender-api'
           image: 'europe-docker.pkg.dev/ensai-2025/test-christophe/gender-api'
+          flags: '--port=8000 --allow-unauthenticated'
           env_vars: |-
-            FLASK_PORT=8080
+            FLASK_PORT=8000
 
       - name: 'Use output'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
