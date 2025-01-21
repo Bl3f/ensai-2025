@@ -35,3 +35,22 @@ jobs:
 
       - name: Push to GCP registry
         run: docker push europe-docker.pkg.dev/ensai-2025/test-christophe/gender-api
+
+    deploy:
+      runs-on: ubuntu-latest
+      needs: build
+
+      steps:
+      - name: Auth GCP gcloud
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+
+      - id: 'deploy'
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'christophe-gender-api'
+          image: 'europe-docker.pkg.dev/ensai-2025/test-christophe/gender-api'
+
+      - name: 'Use output'
+        run: 'curl "${{ steps.deploy.outputs.url }}"'
