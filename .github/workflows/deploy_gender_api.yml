@@ -66,6 +66,7 @@ jobs:
           flags: '--port=8000 --allow-unauthenticated --ingress=all'
           env_vars: |-
             FLASK_PORT=8000
+            MISTRAL_API_KEY=${{ secrets.MISTRAL_API_KEY }}
 
       - name: 'Use output'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
