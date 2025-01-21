@@ -63,6 +63,8 @@ jobs:
         with:
           service: 'christophe-gender-api'
           image: 'europe-docker.pkg.dev/ensai-2025/test-christophe/gender-api'
+          env_vars: |-
+            FLASK_PORT=8080
 
       - name: 'Use output'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
