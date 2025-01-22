@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from day1 import KEYFILE
 
 KEYFILE = 'ensai-2025-8f3e0d316c90.json'
+RAW_DATASET_NAME = 'raw_christophe'
 
 def get_postgres_engine():
     username = "postgres"
@@ -25,7 +26,7 @@ def get_data_from_postgres(table: str, limit="10") -> pd.DataFrame:
 
 def save_data_to_bigquery(table: str, data: pd.DataFrame) -> None:
     credentials = get_biquery_credentials()
-    fqdn_name = f"raw_christophe.{table}"
+    fqdn_name = f"{RAW_DATASET_NAME}.{table}"
     data.to_gbq(fqdn_name, credentials=credentials, project_id="ensai-2025", if_exists="replace")
 
 def transfer_data(table: str):
