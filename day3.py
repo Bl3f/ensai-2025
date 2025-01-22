@@ -24,18 +24,40 @@ def get_data_from_postgres(table: str, limit="10") -> pd.DataFrame:
     limit = f"LIMIT {limit}" if limit else ""
     return pd.read_sql(f"SELECT * FROM {table} {limit}", con=engine)
 
+def get_data_from_url(url: str) -> pd.DataFrame:
+    return pd.read_csv(url)
+
 def save_data_to_bigquery(table: str, data: pd.DataFrame) -> None:
     credentials = get_biquery_credentials()
     fqdn_name = f"{RAW_DATASET_NAME}.{table}"
-    data.to_gbq(fqdn_name, credentials=credentials, project_id="ensai-2025", if_exists="replace")
+    data.to_gbq(
+        fqdn_name,
+        credentials=credentials,
+        project_id="ensai-2025",
+        if_exists="replace",
+        location="EU",
+    )
 
-def transfer_data(table: str):
-    df = get_data_from_postgres(table)
-    save_data_to_bigquery(table, df)
+def transfer_data(config: dict) -> None:
+    if config['type'] == 'postgres':
+        df = get_data_from_postgres(config['table'], config.get('limit'))
+
+    if config["type"] == 'url':
+        df = get_data_from_url(config["url"])
+
+    save_data_to_bigquery(config['table'], df)
 
 
 def run():
-    transfer_data('prenoms')
+    configs = [
+        {'table': 'prenoms', 'limit': '10', 'type': 'postgres'},
+        {'table': 'regions', 'type': 'url', 'url': 'https://www.data.gouv.fr/fr/datasets/r/70cef74f-70b1-495a-8500-c089229c0254'},
+    ]
+
+    for config in configs:
+        print(f"Transferring data for {config['table']} (type: {config['type']})...")
+        transfer_data(config)
+        print("Done.")
 
 if __name__ == '__main__':
     run()
