@@ -1,3 +1,5 @@
+import time
+
 import click
 import requests
 from bs4 import BeautifulSoup
@@ -69,6 +71,7 @@ def run(date, pages):
         click.echo(f"Getting page {i+1} for date {date}...")
         response = requests.get(url)
         results.extend(extract_all_links(response.text, date))
+        time.sleep(3g)
 
     df = pd.DataFrame(results)
     df.to_csv(f"hackernews.{date}.csv", index=False)
