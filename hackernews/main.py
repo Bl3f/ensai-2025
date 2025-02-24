@@ -1,3 +1,4 @@
+import os
 import time
 from email.policy import default
 
@@ -36,12 +37,16 @@ def create_table(name, client):
 
     client.create_table(table, exists_ok=True)
 
-@click.command()
+@click.group()
+def cli():
+    pass
+
+@cli.command()
 @click.argument('date', type=click.DateTime(['%Y-%m-%d']))
 @click.option("--pages", default=5, help="Number of pages to scrape.")
 @click.option("--scrape/--no-scrape", is_flag=True, help="Scrape the data.", default=True)
 @click.option('--sleep', type=int, default=1, help='Sleep time between requests.')
-def run(date, pages, scrape, sleep):
+def ingest(date, pages, scrape, sleep):
     """Run the CLI to scrape hacker news for a given date."""
     date_str = date.strftime('%Y-%m-%d')
     filename = f"hackernews.{date_str}.csv"
@@ -78,5 +83,34 @@ def run(date, pages, scrape, sleep):
     job = client.load_table_from_dataframe(df, table_id, job_config=job_config)  # Make an API request
     job.result()
 
+@cli.command()
+@click.argument('file', type=click.Path(exists=True))
+def news(file):
+    df = pd.read_parquet(file)
+
+    for index, row in df.iterrows():
+        url = row["url"]
+        partition_date = row["partition_date"]
+        rank = row["rank"]
+        try:
+            folder = os.path.join("pages", partition_date)
+            filename = os.path.join(folder, f"{rank}.html")
+
+            if os.path.exists(filename):
+                click.echo(f"Skipping {url} as it already exists.")
+                continue
+
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
+            click.echo(f"Downloading {url}...")
+            response = requests.get(url, timeout=5)
+            with open(filename, "w") as f:
+                f.write(response.text)
+        except Exception as e:
+            click.echo(f"Failed to download {url}: {e}")
+            continue
+
+
 if __name__ == '__main__':
-    run()
+    cli()
