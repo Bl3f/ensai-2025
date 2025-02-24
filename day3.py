@@ -19,10 +19,14 @@ def get_postgres_engine():
 def get_biquery_credentials():
     return service_account.Credentials.from_service_account_file(KEYFILE)
 
-def get_data_from_postgres(table: str, limit="10") -> pd.DataFrame:
+def get_data_from_postgres(table: str, limit="10", ingestion_mode="full", partition_col=None) -> pd.DataFrame:
     engine = get_postgres_engine()
     limit = f"LIMIT {limit}" if limit else ""
-    return pd.read_sql(f"SELECT * FROM {table} {limit}", con=engine)
+    if ingestion_mode == 'full':
+        return pd.read_sql(f"SELECT * FROM {table} {limit}", con=engine)
+    elif ingestion_mode == 'incremental':
+        partition = "2020"
+        return pd.read_sql(f"SELECT * FROM {table} WHERE {partition_col} = '{partition}' {limit}", con=engine)
 
 def get_data_from_url(url: str) -> pd.DataFrame:
     return pd.read_csv(url)
@@ -40,7 +44,7 @@ def save_data_to_bigquery(table: str, data: pd.DataFrame) -> None:
 
 def transfer_data(config: dict) -> None:
     if config['type'] == 'postgres':
-        df = get_data_from_postgres(config['table'], config.get('limit'))
+        df = get_data_from_postgres(config['table'], config.get('limit'), config.get('ingestion_mode'), config.get('partition_col'))
 
     if config["type"] == 'url':
         df = get_data_from_url(config["url"])
@@ -50,7 +54,7 @@ def transfer_data(config: dict) -> None:
 
 def run():
     configs = [
-        {'table': 'prenoms', 'limit': '10', 'type': 'postgres'},
+        {'table': 'prenoms', 'limit': '10', 'type': 'postgres', 'ingestion_mode': 'incremental', 'partition_col': 'annais'},
         {'table': 'regions', 'type': 'url', 'url': 'https://www.data.gouv.fr/fr/datasets/r/70cef74f-70b1-495a-8500-c089229c0254'},
     ]
 
