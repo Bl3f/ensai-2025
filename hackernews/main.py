@@ -1,6 +1,7 @@
 import click
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
 
 def extract_all_links(html, date):
     """Extract all the news from the response."""
@@ -57,17 +58,20 @@ def extract_one_link(html, date):
 
 @click.command()
 @click.argument('date')
-def run(date):
+@click.option("--pages", default=5, help="Number of pages to scrape.")
+def run(date, pages):
     """Run the CLI to scrape hacker news for a given date."""
     click.echo(f'Scraping Hacker News for date: {date}')
 
-    url = f"https://news.ycombinator.com/front?day={date}"
-    response = requests.get(url)
+    results = []
+    for i in range(pages):
+        url = f"https://news.ycombinator.com/front?day={date}&p={i+1}"
+        click.echo(f"Getting page {i+1} for date {date}...")
+        response = requests.get(url)
+        results.extend(extract_all_links(response.text, date))
 
-    results = extract_all_links(response.text, date)
-
-    print(results)
-
+    df = pd.DataFrame(results)
+    df.to_csv(f"hackernews.{date}.csv", index=False)
 
 if __name__ == '__main__':
     run()
