@@ -71,7 +71,7 @@ def run(date, pages):
         click.echo(f"Getting page {i+1} for date {date}...")
         response = requests.get(url)
         results.extend(extract_all_links(response.text, date))
-        time.sleep(3g)
+        time.sleep(3)
 
     df = pd.DataFrame(results)
     df.to_csv(f"hackernews.{date}.csv", index=False)
